@@ -1,24 +1,45 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { phones } from '../data/phones';
+import { phones as localPhones } from '../data/phones';
+import { getAllPhones } from '../services/phoneService';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
   const [phonesData, setPhonesData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState('local');
   const { addToCart } = useCart();
   const { firebaseAvailable } = useAuth();
 
   useEffect(() => {
-    // Simulate loading for smooth UX, then load phones data
-    const timer = setTimeout(() => {
-      setPhonesData(phones);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
+    loadPhones();
   }, []);
+
+  const loadPhones = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to load Firebase data first
+      try {
+        const firebasePhones = await getAllPhones();
+        setPhonesData(firebasePhones);
+        setDataSource('firebase');
+      } catch (firebaseError) {
+        console.warn('Firebase data not available, using local data:', firebaseError.message);
+        // Fall back to local data if Firebase fails
+        setPhonesData(localPhones);
+        setDataSource('local');
+      }
+    } catch (error) {
+      console.error('Error loading phones:', error);
+      // Fallback to local data on any error
+      setPhonesData(localPhones);
+      setDataSource('local');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToCart = (phone) => {
     addToCart(phone);
@@ -38,9 +59,9 @@ const Home = () => {
 
   return (
     <div className="container mt-4">
-      {!firebaseAvailable && (
+      {dataSource === 'local' && (
         <div className="alert alert-info mb-4">
-          <strong>Demo Mode:</strong> You're browsing in demo mode. Some features like user accounts and admin panel require Firebase configuration.
+          <strong>Demo Mode:</strong> Showing local demo data. {!firebaseAvailable ? 'Firebase configuration required for full functionality.' : 'Add phones via Admin Panel to see them here.'}
         </div>
       )}
       
@@ -48,6 +69,11 @@ const Home = () => {
         <div className="col-12">
           <h1 className="text-center mb-4">Mobile Phones for Sale</h1>
           <p className="text-center text-muted">Discover our collection of the latest smartphones</p>
+          {dataSource === 'firebase' && (
+            <p className="text-center text-success">
+              <small>✓ Showing live data from Firebase</small>
+            </p>
+          )}
         </div>
       </div>
       
