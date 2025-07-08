@@ -49,11 +49,9 @@ const AdminPanel = () => {
     try {
       setSyncingDemo(true);
       // Create a copy of the demo product in Firebase
-      const firebasePhone = await createPhone({
-        ...phone,
-        // Remove the numeric ID since Firebase will generate its own
-        id: undefined
-      });
+      // Remove the numeric ID since Firebase will generate its own
+      const { id, ...phoneWithoutId } = phone;
+      const firebasePhone = await createPhone(phoneWithoutId);
       
       // Refresh the phones list to show the synced product
       await loadPhones();
