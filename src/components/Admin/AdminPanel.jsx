@@ -20,21 +20,18 @@ const AdminPanel = () => {
       setLoading(true);
       setError('');
       
-      // First, show local data immediately for fast loading
-      setPhones(localPhones);
-      setDataSource('local');
-      setLoading(false);
-      
-      // Then try to load Firebase data in the background
+      // Try to load Firebase data first
       try {
         const firebasePhones = await getAllPhones();
-        if (firebasePhones && firebasePhones.length > 0) {
-          setPhones(firebasePhones);
-          setDataSource('firebase');
-        }
+        setPhones(firebasePhones);
+        setDataSource('firebase');
+        setLoading(false);
       } catch (firebaseError) {
-        console.warn('Firebase data not available, using local data:', firebaseError);
-        // Keep using local data if Firebase fails
+        console.warn('Firebase data not available, using local data:', firebaseError.message);
+        // Fall back to local data if Firebase fails
+        setPhones(localPhones);
+        setDataSource('local');
+        setLoading(false);
       }
     } catch (error) {
       setError('Error loading phones: ' + error.message);
@@ -120,8 +117,9 @@ const AdminPanel = () => {
 
       {dataSource === 'local' && (
         <div className="alert alert-info">
-          <strong>Note:</strong> Currently showing local data. Firebase features (add/edit/delete) are disabled. 
-          Check your Firebase configuration if you need full admin functionality.
+          <strong>Demo Mode:</strong> Currently showing local data. Firebase features (add/edit/delete) are disabled. 
+          <br />
+          <small>To enable full functionality, ensure Firebase Authentication and Firestore are properly configured in your Firebase Console.</small>
         </div>
       )}
 

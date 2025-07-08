@@ -14,6 +14,10 @@ const COLLECTION_NAME = 'phones';
 
 // Create a new phone
 export const createPhone = async (phoneData) => {
+  if (!db) {
+    throw new Error('Firebase is not initialized');
+  }
+  
   try {
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...phoneData,
@@ -30,11 +34,15 @@ export const createPhone = async (phoneData) => {
 
 // Read all phones with timeout
 export const getAllPhones = async () => {
+  if (!db) {
+    throw new Error('Firebase is not initialized');
+  }
+  
   try {
     // Add a timeout to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Firebase request timeout')), 10000);
-    });
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Firebase request timeout')), 5000)
+    );
 
     const dataPromise = getDocs(collection(db, COLLECTION_NAME));
     
@@ -61,6 +69,10 @@ export const getAllPhones = async () => {
 
 // Read a single phone by ID
 export const getPhoneById = async (id) => {
+  if (!db) {
+    throw new Error('Firebase is not initialized');
+  }
+  
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
@@ -84,6 +96,10 @@ export const getPhoneById = async (id) => {
 
 // Update a phone
 export const updatePhone = async (id, phoneData) => {
+  if (!db) {
+    throw new Error('Firebase is not initialized');
+  }
+  
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
@@ -100,6 +116,10 @@ export const updatePhone = async (id, phoneData) => {
 
 // Delete a phone
 export const deletePhone = async (id) => {
+  if (!db) {
+    throw new Error('Firebase is not initialized');
+  }
+  
   try {
     await deleteDoc(doc(db, COLLECTION_NAME, id));
     return id;

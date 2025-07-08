@@ -29,7 +29,25 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       return;
     }
-    setFirebaseAvailable(true);
+    
+    // Test Firebase connection
+    const testConnection = async () => {
+      try {
+        // Try to get current user state
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          setCurrentUser(user);
+          setFirebaseAvailable(true);
+          setLoading(false);
+          unsubscribe(); // Clean up this test listener
+        });
+      } catch (error) {
+        console.error('Firebase connection test failed:', error);
+        setFirebaseAvailable(false);
+        setLoading(false);
+      }
+    };
+    
+    testConnection();
   }, []);
   const signup = async (email, password, displayName) => {
     if (!auth) {
