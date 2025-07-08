@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { phones } from '../data/phones';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
   const [phonesData, setPhonesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
+  const { firebaseAvailable } = useAuth();
 
   useEffect(() => {
     // Simulate loading for smooth UX, then load phones data
@@ -36,6 +38,12 @@ const Home = () => {
 
   return (
     <div className="container mt-4">
+      {!firebaseAvailable && (
+        <div className="alert alert-info mb-4">
+          <strong>Demo Mode:</strong> You're browsing in demo mode. Some features like user accounts and admin panel require Firebase configuration.
+        </div>
+      )}
+      
       <div className="row mb-4">
         <div className="col-12">
           <h1 className="text-center mb-4">Mobile Phones for Sale</h1>

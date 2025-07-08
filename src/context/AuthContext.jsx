@@ -21,22 +21,45 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [firebaseAvailable, setFirebaseAvailable] = useState(true);
 
+  useEffect(() => {
+    if (!auth) {
+      setFirebaseAvailable(false);
+      setLoading(false);
+      return;
+    }
+    setFirebaseAvailable(true);
+  }, []);
   const signup = async (email, password, displayName) => {
+    if (!auth) {
+      throw new Error('Firebase authentication is not available. Please check your Firebase configuration.');
+    }
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName });
     return userCredential;
   };
 
   const login = (email, password) => {
+    if (!auth) {
+      throw new Error('Firebase authentication is not available. Please check your Firebase configuration.');
+    }
     return signInWithEmailAndPassword(auth, email, password);
   };
 
   const logout = () => {
+    if (!auth) {
+      throw new Error('Firebase authentication is not available. Please check your Firebase configuration.');
+    }
     return signOut(auth);
   };
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
@@ -49,7 +72,8 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     signup,
     login,
-    logout
+    logout,
+    firebaseAvailable
   };
 
   return (

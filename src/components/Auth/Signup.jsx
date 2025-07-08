@@ -9,9 +9,29 @@ const Signup = () => {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const { signup, firebaseAvailable } = useAuth();
   const navigate = useNavigate();
 
+  if (!firebaseAvailable) {
+    return (
+      <div className="container mt-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6">
+            <div className="alert alert-warning">
+              <h4>Firebase Configuration Required</h4>
+              <p>Account creation is currently unavailable. Please configure Firebase to enable signup functionality.</p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigate('/')}
+              >
+                Continue as Guest
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const handleSubmit = async (e) => {
     e.preventDefault();
 

@@ -7,9 +7,29 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, firebaseAvailable } = useAuth();
   const navigate = useNavigate();
 
+  if (!firebaseAvailable) {
+    return (
+      <div className="container mt-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6">
+            <div className="alert alert-warning">
+              <h4>Firebase Configuration Required</h4>
+              <p>Authentication features are currently unavailable. Please configure Firebase to enable login functionality.</p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigate('/')}
+              >
+                Continue as Guest
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const handleSubmit = async (e) => {
     e.preventDefault();
     

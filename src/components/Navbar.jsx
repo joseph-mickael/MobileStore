@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const { getTotalItems } = useCart();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, firebaseAvailable } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -34,7 +34,7 @@ const Navbar = () => {
             <li className="nav-item">
               <Link className="nav-link" to="/">Home</Link>
             </li>
-            {currentUser && (
+            {currentUser && firebaseAvailable && (
               <li className="nav-item">
                 <Link className="nav-link" to="/admin">Admin</Link>
               </li>
@@ -49,7 +49,7 @@ const Navbar = () => {
                 )}
               </Link>
             </li>
-            {currentUser ? (
+            {currentUser && firebaseAvailable ? (
               <li className="nav-item dropdown">
                 <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                   {currentUser.displayName || currentUser.email}
@@ -58,7 +58,7 @@ const Navbar = () => {
                   <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
                 </ul>
               </li>
-            ) : (
+            ) : firebaseAvailable ? (
               <>
                 <li className="nav-item">
                   <Link className="nav-link" to="/login">Login</Link>
@@ -67,6 +67,12 @@ const Navbar = () => {
                   <Link className="nav-link" to="/signup">Sign Up</Link>
                 </li>
               </>
+            ) : (
+              <li className="nav-item">
+                <span className="nav-link text-warning">
+                  <small>Guest Mode</small>
+                </span>
+              </li>
             )}
           </ul>
         </div>
