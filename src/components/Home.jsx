@@ -86,12 +86,6 @@ const Home = () => {
         </div>
       )}
       
-      {firebaseAvailable && (
-        <div className="alert alert-success mb-4">
-          <strong>Live Store:</strong> All products are editable via Admin Panel. Changes will appear here immediately!
-        </div>
-      )}
-      
       <div className="row mb-4">
         <div className="col-12">
           <h1 className="text-center mb-4">Mobile Phones for Sale</h1>
@@ -113,12 +107,6 @@ const Home = () => {
                 <h5 className="card-title">{phone.name}</h5>
                 <p className="card-text text-muted mb-2">{phone.brand}</p>
                 <p className="card-text">{phone.description}</p>
-                {typeof phone.id === 'string' && (
-                  <small className="text-success mb-2">✓ Editable Product</small>
-                )}
-                {typeof phone.id === 'number' && (
-                  <small className="text-info mb-2">📱 Demo Product</small>
-                )}
                 <div className="mt-auto">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <span className="h5 mb-0 text-primary">₹{phone.price.toLocaleString('en-IN')}</span>

@@ -72,16 +72,19 @@ const AdminPanel = () => {
 
     // Check if it's a demo product (numeric ID)
     if (typeof id === 'number') {
-      alert('Cannot delete demo products. You can only edit them or create new ones.');
-      return;
-    }
-
-    if (window.confirm('Are you sure you want to delete this phone?')) {
-      try {
-        await deletePhone(id);
+      // For demo products, just remove from local state
+      if (window.confirm('Are you sure you want to delete this demo product?')) {
         setPhones(phones.filter(phone => phone.id !== id));
-      } catch (error) {
-        setError('Error deleting phone: ' + error.message);
+      }
+    } else {
+      // For Firebase products, delete from Firebase
+      if (window.confirm('Are you sure you want to delete this phone?')) {
+        try {
+          await deletePhone(id);
+          setPhones(phones.filter(phone => phone.id !== id));
+        } catch (error) {
+          setError('Error deleting phone: ' + error.message);
+        }
       }
     }
   };
@@ -231,22 +234,17 @@ const AdminPanel = () => {
                       disabled={dataSource === 'local'}
                       title={isDemoProduct(phone) ? 'Will sync to Firebase for editing' : 'Edit this product'}
                     >
-                      {isDemoProduct(phone) ? 'Edit (Sync)' : 'Edit'}
+                      Edit
                     </button>
                     <button 
                       className="btn btn-outline-danger btn-sm"
                       onClick={() => handleDelete(phone.id)}
-                      disabled={dataSource === 'local' || isDemoProduct(phone)}
-                      title={isDemoProduct(phone) ? 'Demo products cannot be deleted' : 'Delete this product'}
+                      disabled={dataSource === 'local'}
+                      title="Delete this product"
                     >
-                      {isDemoProduct(phone) ? 'Protected' : 'Delete'}
+                      Delete
                     </button>
                   </div>
-                  {isDemoProduct(phone) && dataSource === 'firebase' && (
-                    <small className="text-muted mt-1 d-block">
-                      Click "Edit (Sync)" to make this product editable
-                    </small>
-                  )}
                 </div>
               </div>
             </div>
