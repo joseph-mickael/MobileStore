@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { phones } from '../data/phones';
+import { phones as localPhones } from '../data/phones';
+import { getPhoneById } from '../services/phoneService';
 import { useCart } from '../context/CartContext';
 
 const PhoneDetails = () => {
@@ -12,17 +13,32 @@ const PhoneDetails = () => {
   const { addToCart } = useCart();
   
   useEffect(() => {
-    // Find phone by ID from phones data
-    const foundPhone = phones.find(p => p.id === parseInt(id));
-    
-    setTimeout(() => {
-      if (foundPhone) {
-        setPhone(foundPhone);
-      } else {
-        setError('Phone not found');
+    const loadPhone = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to load from Firebase first
+        try {
+          const firebasePhone = await getPhoneById(id);
+          setPhone(firebasePhone);
+        } catch (firebaseError) {
+          // Fall back to local data
+          const foundPhone = localPhones.find(p => p.id === parseInt(id));
+          if (foundPhone) {
+            setPhone(foundPhone);
+          } else {
+            setError('Phone not found');
+          }
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        setError('Error loading phone details');
+        setLoading(false);
       }
-      setLoading(false);
-    }, 300);
+    };
+
+    loadPhone();
   }, [id]);
   
   if (loading) {
