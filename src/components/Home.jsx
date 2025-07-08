@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { phones as localPhones } from '../data/phones';
-import { getAllPhones } from '../services/phoneService';
+import { phones } from '../data/phones';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,32 +11,13 @@ const Home = () => {
   const { firebaseAvailable } = useAuth();
 
   useEffect(() => {
-    const loadPhones = async () => {
-      try {
-        setLoading(true);
-        
-        // Try to load from Firebase first, then fall back to local data
-        try {
-          const firebasePhones = await getAllPhones();
-          if (firebasePhones && firebasePhones.length > 0) {
-            setPhonesData(firebasePhones);
-          } else {
-            setPhonesData(localPhones);
-          }
-        } catch (error) {
-          console.warn('Using local data:', error.message);
-          setPhonesData(localPhones);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading phones:', error);
-        setPhonesData(localPhones);
-        setLoading(false);
-      }
-    };
+    // Simulate loading for smooth UX, then load phones data
+    const timer = setTimeout(() => {
+      setPhonesData(phones);
+      setLoading(false);
+    }, 500);
 
-    loadPhones();
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAddToCart = (phone) => {

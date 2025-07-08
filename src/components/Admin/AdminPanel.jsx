@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllPhones, deletePhone, getPhoneById } from '../../services/phoneService';
+import { getAllPhones, deletePhone } from '../../services/phoneService';
 import { phones as localPhones } from '../../data/phones';
 import PhoneForm from './PhoneForm';
 
@@ -20,23 +20,19 @@ const AdminPanel = () => {
       setLoading(true);
       setError('');
       
-      // Always try to load Firebase data first, then fall back to local
+      // Try to load Firebase data first
       try {
         const firebasePhones = await getAllPhones();
-        if (firebasePhones && firebasePhones.length > 0) {
-          setPhones(firebasePhones);
-          setDataSource('firebase');
-        } else {
-          // If Firebase is connected but no data, still allow CRUD operations
-          setPhones(localPhones);
-          setDataSource('firebase');
-        }
+        setPhones(firebasePhones);
+        setDataSource('firebase');
+        setLoading(false);
       } catch (firebaseError) {
         console.warn('Firebase data not available, using local data:', firebaseError.message);
+        // Fall back to local data if Firebase fails
         setPhones(localPhones);
         setDataSource('local');
+        setLoading(false);
       }
-      setLoading(false);
     } catch (error) {
       setError('Error loading phones: ' + error.message);
       setLoading(false);
@@ -151,14 +147,6 @@ const AdminPanel = () => {
                 <h5 className="card-title">{phone.name}</h5>
                 <p className="card-text text-muted">{phone.brand}</p>
                 <p className="card-text">₹{phone.price?.toLocaleString('en-IN')}</p>
-                <div className="card-text">
-                  <small className="text-muted">
-                    <strong>Display:</strong> {phone.specs?.display}<br/>
-                    <strong>Processor:</strong> {phone.specs?.processor}<br/>
-                    <strong>Camera:</strong> {phone.specs?.camera}<br/>
-                    <strong>Storage:</strong> {phone.specs?.storage}
-                  </small>
-                </div>
                 <div className="mt-auto">
                   <div className="d-flex gap-2">
                     <button 
@@ -174,12 +162,6 @@ const AdminPanel = () => {
                       disabled={dataSource === 'local'}
                     >
                       Delete
-                    </button>
-                    <button 
-                      className="btn btn-outline-info btn-sm"
-                      onClick={() => window.open(`/phone/${phone.id}`, '_blank')}
-                    >
-                      View
                     </button>
                   </div>
                 </div>
