@@ -8,8 +8,6 @@ import { useAuth } from '../context/AuthContext';
 const Home = () => {
   const [phonesData, setPhonesData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [firebasePhones, setFirebasePhones] = useState([]);
-  const [hasFirebaseData, setHasFirebaseData] = useState(false);
   const { addToCart } = useCart();
   const { firebaseAvailable } = useAuth();
 
@@ -21,30 +19,44 @@ const Home = () => {
     try {
       setLoading(true);
       
-      // Always start with local phones
-      let allPhones = [...localPhones];
-      
       // Try to load Firebase data and combine with local
       try {
         const fbPhones = await getAllPhones();
-        setFirebasePhones(fbPhones);
-        setHasFirebaseData(true);
         
-        // Combine local phones with Firebase phones
-        // Firebase phones will have string IDs, local phones have number IDs
-        allPhones = [...localPhones, ...fbPhones];
+        // Create a map to track which demo products have been synced to Firebase
+        const syncedDemoIds = new Set();
+        const firebaseProducts = [];
+        
+        fbPhones.forEach(fbPhone => {
+          // Check if this Firebase product corresponds to a demo product
+          const matchingDemo = localPhones.find(localPhone => 
+            localPhone.name === fbPhone.name && 
+            localPhone.brand === fbPhone.brand
+          );
+          
+          if (matchingDemo) {
+            syncedDemoIds.add(matchingDemo.id);
+          }
+          firebaseProducts.push(fbPhone);
+        });
+        
+        // Include demo products that haven't been synced to Firebase
+        const unsyncedDemoProducts = localPhones.filter(localPhone => 
+          !syncedDemoIds.has(localPhone.id)
+        );
+        
+        // Combine unsynced demo products with Firebase products
+        const allPhones = [...unsyncedDemoProducts, ...firebaseProducts];
+        setPhonesData(allPhones);
       } catch (firebaseError) {
         console.warn('Firebase data not available:', firebaseError.message);
-        setHasFirebaseData(false);
-        // allPhones already contains local phones
+        // Fallback to local data only
+        setPhonesData(localPhones);
       }
-      
-      setPhonesData(allPhones);
     } catch (error) {
       console.error('Error loading phones:', error);
       // Fallback to local data only on any error
       setPhonesData(localPhones);
-      setHasFirebaseData(false);
     } finally {
       setLoading(false);
     }
@@ -70,19 +82,13 @@ const Home = () => {
     <div className="container mt-4">
       {!firebaseAvailable && (
         <div className="alert alert-info mb-4">
-          <strong>Demo Mode:</strong> Firebase configuration required for full functionality. Currently showing local demo products only.
+          <strong>Demo Mode:</strong> Firebase configuration required for full functionality.
         </div>
       )}
       
-      {firebaseAvailable && hasFirebaseData && firebasePhones.length > 0 && (
+      {firebaseAvailable && (
         <div className="alert alert-success mb-4">
-          <strong>Live Data:</strong> Showing {localPhones.length} demo products + {firebasePhones.length} products from your store. Add more via Admin Panel!
-        </div>
-      )}
-      
-      {firebaseAvailable && !hasFirebaseData && (
-        <div className="alert alert-warning mb-4">
-          <strong>Local Products:</strong> Showing {localPhones.length} demo products. Add your own products via Admin Panel to see them here!
+          <strong>Live Store:</strong> All products are editable via Admin Panel. Changes will appear here immediately!
         </div>
       )}
       
@@ -107,8 +113,11 @@ const Home = () => {
                 <h5 className="card-title">{phone.name}</h5>
                 <p className="card-text text-muted mb-2">{phone.brand}</p>
                 <p className="card-text">{phone.description}</p>
-                {hasFirebaseData && typeof phone.id === 'string' && (
-                  <small className="text-success mb-2">✓ Your Product</small>
+                {typeof phone.id === 'string' && (
+                  <small className="text-success mb-2">✓ Editable Product</small>
+                )}
+                {typeof phone.id === 'number' && (
+                  <small className="text-info mb-2">📱 Demo Product</small>
                 )}
                 <div className="mt-auto">
                   <div className="d-flex justify-content-between align-items-center mb-3">

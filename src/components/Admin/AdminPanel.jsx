@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllPhones, deletePhone } from '../../services/phoneService';
+import { getAllPhones, deletePhone, createPhone } from '../../services/phoneService';
 import { phones as localPhones } from '../../data/phones';
 import PhoneForm from './PhoneForm';
 
@@ -9,7 +9,8 @@ const AdminPanel = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPhone, setEditingPhone] = useState(null);
   const [error, setError] = useState('');
-  const [dataSource, setDataSource] = useState('local'); // 'local' or 'firebase'
+  const [dataSource, setDataSource] = useState('local');
+  const [syncingDemo, setSyncingDemo] = useState(false);
 
   useEffect(() => {
     loadPhones();
@@ -23,7 +24,12 @@ const AdminPanel = () => {
       // Try to load Firebase data first
       try {
         const firebasePhones = await getAllPhones();
-        setPhones(firebasePhones);
+        
+        // Combine local phones with Firebase phones for editing
+        // Local phones will be shown but marked as needing sync
+        const allPhones = [...localPhones, ...firebasePhones];
+        
+        setPhones(allPhones);
         setDataSource('firebase');
         setLoading(false);
       } catch (firebaseError) {
@@ -39,9 +45,36 @@ const AdminPanel = () => {
     }
   };
 
+  const syncDemoProductToFirebase = async (phone) => {
+    try {
+      setSyncingDemo(true);
+      // Create a copy of the demo product in Firebase
+      const firebasePhone = await createPhone({
+        ...phone,
+        // Remove the numeric ID since Firebase will generate its own
+        id: undefined
+      });
+      
+      // Refresh the phones list to show the synced product
+      await loadPhones();
+      return firebasePhone;
+    } catch (error) {
+      setError('Error syncing demo product: ' + error.message);
+      throw error;
+    } finally {
+      setSyncingDemo(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (dataSource === 'local') {
       alert('Cannot delete from local data. This feature requires Firebase connection.');
+      return;
+    }
+
+    // Check if it's a demo product (numeric ID)
+    if (typeof id === 'number') {
+      alert('Cannot delete demo products. You can only edit them or create new ones.');
       return;
     }
 
@@ -55,13 +88,26 @@ const AdminPanel = () => {
     }
   };
 
-  const handleEdit = (phone) => {
+  const handleEdit = async (phone) => {
     if (dataSource === 'local') {
       alert('Cannot edit local data. This feature requires Firebase connection.');
       return;
     }
-    setEditingPhone(phone);
-    setShowForm(true);
+
+    // If it's a demo product (numeric ID), sync it to Firebase first
+    if (typeof phone.id === 'number') {
+      try {
+        const syncedPhone = await syncDemoProductToFirebase(phone);
+        setEditingPhone(syncedPhone);
+        setShowForm(true);
+      } catch (error) {
+        // Error already handled in syncDemoProductToFirebase
+      }
+    } else {
+      // It's already a Firebase product, edit directly
+      setEditingPhone(phone);
+      setShowForm(true);
+    }
   };
 
   const handleAddNew = () => {
@@ -82,6 +128,9 @@ const AdminPanel = () => {
     setShowForm(false);
     setEditingPhone(null);
   };
+
+  const isFirebaseProduct = (phone) => typeof phone.id === 'string';
+  const isDemoProduct = (phone) => typeof phone.id === 'number';
 
   if (loading) {
     return (
@@ -115,11 +164,28 @@ const AdminPanel = () => {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {syncingDemo && (
+        <div className="alert alert-info">
+          <div className="d-flex align-items-center">
+            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+            Syncing demo product to Firebase for editing...
+          </div>
+        </div>
+      )}
+
       {dataSource === 'local' && (
         <div className="alert alert-info">
           <strong>Demo Mode:</strong> Currently showing local data. Firebase features (add/edit/delete) are disabled. 
           <br />
           <small>To enable full functionality, ensure Firebase Authentication and Firestore are properly configured in your Firebase Console.</small>
+        </div>
+      )}
+
+      {dataSource === 'firebase' && (
+        <div className="alert alert-success">
+          <strong>Live Mode:</strong> All products are editable! Demo products will be synced to Firebase when you edit them.
+          <br />
+          <small>Changes will be visible on the home page immediately after saving.</small>
         </div>
       )}
 
@@ -135,14 +201,26 @@ const AdminPanel = () => {
 
       <div className="row">
         {phones.map(phone => (
-          <div key={phone.id} className="col-lg-4 col-md-6 mb-4">
+          <div key={`${phone.id}-${isDemoProduct(phone) ? 'demo' : 'firebase'}`} className="col-lg-4 col-md-6 mb-4">
             <div className="card h-100">
-              <img 
-                src={phone.image} 
-                className="card-img-top" 
-                alt={phone.name}
-                style={{ height: '250px', objectFit: 'cover' }}
-              />
+              <div className="position-relative">
+                <img 
+                  src={phone.image} 
+                  className="card-img-top" 
+                  alt={phone.name}
+                  style={{ height: '250px', objectFit: 'cover' }}
+                />
+                {isDemoProduct(phone) && (
+                  <span className="position-absolute top-0 start-0 badge bg-info m-2">
+                    Demo Product
+                  </span>
+                )}
+                {isFirebaseProduct(phone) && (
+                  <span className="position-absolute top-0 start-0 badge bg-success m-2">
+                    Your Product
+                  </span>
+                )}
+              </div>
               <div className="card-body d-flex flex-column">
                 <h5 className="card-title">{phone.name}</h5>
                 <p className="card-text text-muted">{phone.brand}</p>
@@ -153,17 +231,24 @@ const AdminPanel = () => {
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => handleEdit(phone)}
                       disabled={dataSource === 'local'}
+                      title={isDemoProduct(phone) ? 'Will sync to Firebase for editing' : 'Edit this product'}
                     >
-                      Edit
+                      {isDemoProduct(phone) ? 'Edit (Sync)' : 'Edit'}
                     </button>
                     <button 
                       className="btn btn-outline-danger btn-sm"
                       onClick={() => handleDelete(phone.id)}
-                      disabled={dataSource === 'local'}
+                      disabled={dataSource === 'local' || isDemoProduct(phone)}
+                      title={isDemoProduct(phone) ? 'Demo products cannot be deleted' : 'Delete this product'}
                     >
-                      Delete
+                      {isDemoProduct(phone) ? 'Protected' : 'Delete'}
                     </button>
                   </div>
+                  {isDemoProduct(phone) && dataSource === 'firebase' && (
+                    <small className="text-muted mt-1 d-block">
+                      Click "Edit (Sync)" to make this product editable
+                    </small>
+                  )}
                 </div>
               </div>
             </div>
