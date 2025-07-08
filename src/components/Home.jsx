@@ -23,30 +23,9 @@ const Home = () => {
       try {
         const fbPhones = await getAllPhones();
         
-        // Create a map to track which demo products have been synced to Firebase
-        const syncedDemoIds = new Set();
-        const firebaseProducts = [];
-        
-        fbPhones.forEach(fbPhone => {
-          // Check if this Firebase product corresponds to a demo product
-          const matchingDemo = localPhones.find(localPhone => 
-            localPhone.name === fbPhone.name && 
-            localPhone.brand === fbPhone.brand
-          );
-          
-          if (matchingDemo) {
-            syncedDemoIds.add(matchingDemo.id);
-          }
-          firebaseProducts.push(fbPhone);
-        });
-        
-        // Include demo products that haven't been synced to Firebase
-        const unsyncedDemoProducts = localPhones.filter(localPhone => 
-          !syncedDemoIds.has(localPhone.id)
-        );
-        
-        // Combine unsynced demo products with Firebase products
-        const allPhones = [...unsyncedDemoProducts, ...firebaseProducts];
+        // Combine all local demo products with all Firebase products
+        // This ensures all products are shown on the home page
+        const allPhones = [...localPhones, ...fbPhones];
         setPhonesData(allPhones);
       } catch (firebaseError) {
         console.warn('Firebase data not available:', firebaseError.message);
