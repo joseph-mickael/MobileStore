@@ -55,8 +55,16 @@ const Navbar = () => {
                   {currentUser.displayName || currentUser.email}
                 </a>
                 <ul className="dropdown-menu">
+                  <li><span className="dropdown-item-text"><small>Signed in as:</small><br/><strong>{currentUser.displayName || currentUser.email}</strong></span></li>
+                  <li><hr className="dropdown-divider" /></li>
                   <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
                 </ul>
+              </li>
+            ) : currentUser && !firebaseAvailable ? (
+              <li className="nav-item">
+                <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
+                  Logout ({currentUser.displayName || currentUser.email})
+                </button>
               </li>
             ) : firebaseAvailable ? (
               <>
